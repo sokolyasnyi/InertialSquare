@@ -17,6 +17,11 @@ class ViewController: UIViewController {
         return view
     }()
     
+    var animator: UIDynamicAnimator!
+    var collision: UICollisionBehavior!
+    var snap: UISnapBehavior!
+
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
@@ -24,19 +29,26 @@ class ViewController: UIViewController {
         view.addSubview(square)
         let tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(tapped))
         self.view.addGestureRecognizer(tapRecognizer)
-        
     }
     
     @objc private func tapped(_ sender: UITapGestureRecognizer) {
         let point = sender.location(in: self.view)
-         moveSquare(at: point)
+//         moveSquare(at: point)
+        moveSquareSnap(at: point)
     }
     
-    private func moveSquare(at point: CGPoint) {
-        let animation = CABasicAnimation(keyPath: "transform.rotation.z")
-        animation.fromValue = 0
-        animation.toValue = CGFloat.pi/4
+    private func moveSquareSnap(at point: CGPoint) {
+        animator = UIDynamicAnimator(referenceView: view)
+        snap = UISnapBehavior(item: square, snapTo: point)
+        snap.damping = 1
+        animator.addBehavior(snap)
         
+        collision = UICollisionBehavior(items: [square])
+        collision.translatesReferenceBoundsIntoBoundary = true
+        animator.addBehavior(collision)
+    }
+    
+    private func moveSquareCA(at point: CGPoint) {
         
         let springAnimation = CASpringAnimation()
         springAnimation.keyPath = "position"
@@ -47,10 +59,13 @@ class ViewController: UIViewController {
         springAnimation.duration = springAnimation.settlingDuration
         springAnimation.fromValue = square.center
         springAnimation.toValue = point
-
+        
+        let rotateAnimation = CABasicAnimation(keyPath: "transform.rotation.z")
+        rotateAnimation.fromValue = 0
+        rotateAnimation.toValue = CGFloat.pi/4
         
         let rotateAndSpring = CAAnimationGroup()
-        rotateAndSpring.animations = [springAnimation, animation]
+        rotateAndSpring.animations = [springAnimation, rotateAnimation]
         rotateAndSpring.duration = 0.8
         rotateAndSpring.timingFunction = .init(name: .easeIn)
         rotateAndSpring.fillMode = .both
@@ -58,8 +73,7 @@ class ViewController: UIViewController {
         square.layer.add(rotateAndSpring, forKey: "Basic")
         square.layer.position = point
     }
-    
-    
+
 }
 
 
